@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Punchman" />
+<meta name="theme-color" content="#433c66" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="description" content="Punchman by Autoprod: an idle ring brawler." />
+<title>Punchman</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" href="icons/favicon.png" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<style>
+@font-face {
+  font-family: 'Lilita One';
+  src: url('fonts/LilitaOne-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  width: 100%; height: 100%; overflow: hidden; background: #14141a;
+  font-family: 'Lilita One', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  touch-action: manipulation;
+  color: #fff;
+}
+#app { position: relative; width: 100%; height: 100%; overflow: hidden; background: #14141a; }
+#stage { position: absolute; inset: 0; }
+#stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#dmg-layer { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; }
+.dmg {
+  position: absolute; color: #fff; font-size: 13px;
+  text-shadow: 0 1px 2px #000d, 0 0 4px #000a;
+  transform: translate(-50%, -50%);
+  white-space: nowrap; letter-spacing: 0.3px; pointer-events: none;
+}
+.dmg.lg { font-size: 16px; }
+
+.gear {
+  position: absolute; top: 11px; left: 11px; z-index: 12;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(180deg, #6d7380, #4a5160);
+  box-shadow: 0 2px 5px #0009, inset 0 1px 0 #9aa0aa, inset 0 -1px 0 #2a3038;
+  display: flex; align-items: center; justify-content: center; border: 0; color: #eef0f4;
+}
+.gear svg { width: 22px; height: 22px; }
+.brand {
+  position: absolute; top: 20px; left: 56px; z-index: 12;
+  font-size: 10px; letter-spacing: 1.8px; color: #b8b8c4;
+  text-shadow: 0 1px 3px #000c; pointer-events: none;
+}
+.gold {
+  position: absolute; top: 13px; right: 12px; z-index: 12;
+  display: flex; align-items: center; gap: 5px;
+  color: #fff; font-size: 17px; letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px #000c, 0 0 6px #0008;
+}
+.gold .coin {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe27a, #e0a81a 55%, #b07a08);
+  box-shadow: 0 1px 2px #0008, inset 0 1px 0 #fff6; position: relative;
+}
+.gold .coin:after {
+  content: ''; position: absolute; inset: 4px; border-radius: 50%;
+  border: 1.5px solid #c49210; opacity: 0.7;
+}
+
+.stage-hud {
+  position: absolute; top: 58px; left: 50%; transform: translateX(-50%);
+  width: 236px; height: 56px; z-index: 12; pointer-events: none;
+}
+.sbar {
+  position: absolute; left: 0; right: 0; top: 26px;
+  height: 9px; border-radius: 5px; background: #1a1c24;
+  box-shadow: 0 1px 3px #0009, inset 0 1px 1px #0008; overflow: visible;
+}
+.sbar .fill {
+  height: 100%; width: 0%; border-radius: 5px 0 0 5px;
+  background: #f0c318; box-shadow: inset 0 1px 0 #ffe87a;
+  transition: width 0.15s linear;
+}
+.unlock-tag {
+  position: absolute; left: 57%; top: 0; transform: translateX(-50%);
+  background: #3a2758; color: #fff;
+  font-size: 8px; line-height: 1.15; letter-spacing: 0.4px;
+  text-align: center; padding: 3px 8px; border-radius: 6px;
+  box-shadow: 0 2px 4px #0007; white-space: nowrap;
+}
+.unlock-tag:after {
+  content: ''; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: #3a2758; border-bottom-width: 0;
+}
+.marker {
+  position: absolute; left: 57%; top: 30px; transform: translate(-50%, -50%);
+  width: 15px; height: 15px; border-radius: 50%;
+  background: #f4f4f8; box-shadow: 0 1px 3px #0008;
+  display: flex; align-items: center; justify-content: center; z-index: 2;
+}
+.marker svg { width: 9px; height: 9px; }
+.stage-lbl {
+  position: absolute; left: 4px; top: 38px;
+  font-size: 13px; color: #fff; letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px #000d, 0 0 6px #0009;
+}
+.reward {
+  position: absolute; left: 57%; top: 38px; transform: translateX(-50%);
+  height: 16px; padding: 0 6px 0 4px; border-radius: 9px;
+  background: #f0c318; color: #3a2a08;
+  font-size: 10px; display: flex; align-items: center; gap: 3px;
+  box-shadow: 0 1px 3px #0008;
+}
+.reward i {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3c0, #e0a81a);
+  display: inline-block;
+}
+.end-icon {
+  position: absolute; right: -6px; top: 23px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #c42c2c;
+  box-shadow: 0 1px 3px #0008, inset 0 1px 0 #ff8080;
+  display: flex; align-items: center; justify-content: center;
+}
+.end-icon span { font-size: 9px; color: #fff; line-height: 1; }
+
+.side-btns {
+  position: absolute; left: 10px; top: 42%; z-index: 12;
+  display: flex; flex-direction: column; gap: 12px; transform: translateY(-20%);
+}
+.sbtn {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(180deg, #4a5160, #2e3340);
+  box-shadow: 0 3px 6px #0008, inset 0 1px 0 #7a8090, inset 0 -1px 0 #1a1e28;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; border: 0;
+}
+.sbtn.speed { font-size: 15px; color: #ffe24a; letter-spacing: 0.3px; text-shadow: 0 1px 2px #000a; }
+.sbtn svg { width: 24px; height: 24px; }
+
+.panel {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 12;
+  background: #433c66;
+  padding: 16px 12px 12px;
+  box-shadow: 0 -6px 18px #0006, inset 0 1px 0 #6d6590;
+  max-height: 62%; overflow-y: auto;
+}
+.arrow {
+  position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  width: 42px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  color: #f2eefc; font-size: 16px; line-height: 1;
+  text-shadow: 0 1px 3px #000c;
+  background: #322c52; border-radius: 0 0 8px 8px; border: 0;
+}
+.hp-row, .xp-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.heart { width: 20px; height: 18px; flex: 0 0 20px; }
+.lv { flex: 0 0 auto; font-size: 11px; color: #fff; letter-spacing: 0.3px; text-shadow: 0 1px 2px #0008; min-width: 36px; }
+.bar {
+  flex: 1; height: 14px; border-radius: 7px; background: #1c1830;
+  box-shadow: inset 0 1px 2px #0008; overflow: hidden; position: relative;
+}
+.bar > i { display: block; height: 100%; border-radius: 7px; width: 0%; }
+.bar.hp > i { background: linear-gradient(180deg, #7dff6a, #2edc3a 60%, #18a028); }
+.bar.xp > i { background: linear-gradient(180deg, #7ec8ff, #2f7aff 60%, #1a4ad0); }
+.bar em {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-style: normal; font-size: 10px; color: #fff;
+  text-shadow: 0 1px 2px #000c; letter-spacing: 0.2px; pointer-events: none;
+}
+.mid { display: flex; align-items: center; gap: 8px; margin: 8px 0 9px; }
+.skills { display: flex; gap: 6px; }
+.sk {
+  width: 44px; height: 44px; border-radius: 10px; background: #2e2a4a;
+  box-shadow: inset 0 1px 0 #5a5480, 0 2px 3px #0005;
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.sk.locked { background: #2a2640; }
+.sk .cd { position: absolute; right: 3px; bottom: 2px; font-size: 8px; color: #fff; text-shadow: 0 1px 2px #000a; }
+.goal-row { display: flex; gap: 8px; }
+.goal-card { flex: 1; min-width: 0; }
+.goal { display: flex; align-items: center; gap: 5px; }
+.goal .gicon { width: 14px; height: 14px; flex: 0 0 14px; }
+.gbar { flex: 1; height: 8px; border-radius: 4px; background: #1c1830; overflow: hidden; box-shadow: inset 0 1px 1px #0006; }
+.gbar > i { display: block; height: 100%; border-radius: 4px; width: 0%; }
+.gbar.a > i { background: #3dcc8a; }
+.gbar.b > i { background: #a85cff; }
+.goal em { font-style: normal; font-size: 10px; color: #fff; width: 36px; text-align: right; text-shadow: 0 1px 2px #0008; }
+.goal-card p { font-size: 9px; line-height: 1.25; color: #e4e0f4; text-shadow: 0 1px 2px #0006; margin-top: 3px; }
+
+.stats { display: none; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 0 0 8px; }
+#app.expanded .stats { display: grid; }
+.stat {
+  background: #322c52; border-radius: 8px; padding: 5px 3px 4px;
+  text-align: center; box-shadow: inset 0 1px 0 #5a5480; border: 0; color: #fff; width: 100%;
+}
+.stat:active { filter: brightness(1.15); }
+.stat .k { font-size: 7px; color: #c8c0e4; letter-spacing: 0.2px; text-transform: uppercase; }
+.stat .v { font-size: 13px; color: #fff; }
+.stat .c { font-size: 8px; color: #f0c318; margin-top: 1px; }
+.passives { display: none; margin-bottom: 8px; }
+#app.expanded .passives { display: block; }
+.passives h4 { font-size: 10px; letter-spacing: 1px; color: #fff; margin-bottom: 5px; font-weight: 400; }
+.pas-row { display: flex; gap: 5px; }
+.pas {
+  flex: 1; background: #322c52; border-radius: 7px; padding: 6px 4px;
+  text-align: center; font-size: 8px; color: #efeafc; line-height: 1.2;
+  box-shadow: inset 0 1px 0 #5a5480;
+}
+.pas.locked { color: #8a84a8; background: #2a2640; }
+#app.expanded .panel { padding-top: 18px; }
+#app.lobby .fight-ui, #app.talents .fight-ui, #app.settings .fight-ui { display: none; }
+#app.lobby .panel, #app.talents .panel, #app.settings .panel { display: none; }
+
+.toast {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+  background: #2a2448ee; color: #fff; padding: 8px 14px; border-radius: 10px;
+  z-index: 30; font-size: 14px; text-shadow: 0 1px 2px #0008;
+  pointer-events: none; opacity: 0; transition: opacity 0.2s;
+}
+.toast.show { opacity: 1; }
+
+/* overlays */
+.overlay {
+  display: none; position: absolute; inset: 0; z-index: 20;
+  background: #1a1630f2; overflow-y: auto; padding: 14px 12px 80px;
+}
+#app.lobby #lobby, #app.talents #talents, #app.settings #settings { display: block; }
+.ov-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ov-head h2 { font-size: 20px; letter-spacing: 0.5px; font-weight: 400; }
+.back {
+  height: 34px; padding: 0 12px; border-radius: 17px; border: 0;
+  background: #322c52; color: #fff; font-family: inherit; font-size: 13px;
+}
+.lobby-body { min-height: 240px; }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.card {
+  background: #2e2a4a; border-radius: 12px; padding: 10px;
+  box-shadow: inset 0 1px 0 #5a5480;
+}
+.card h3 { font-size: 14px; font-weight: 400; margin-bottom: 4px; }
+.card p { font-size: 11px; color: #c8c0e4; line-height: 1.35; margin-bottom: 8px; }
+.buy {
+  width: 100%; height: 30px; border: 0; border-radius: 8px;
+  background: #f0c318; color: #3a2a08; font-family: inherit; font-size: 12px;
+}
+.buy:disabled { background: #4a4658; color: #9a96a8; }
+.card .lvl { font-size: 11px; color: #ffe27a; margin-bottom: 6px; }
+
+.tabs {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 22;
+  display: none; background: #2a2448; padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 16px #0006;
+  grid-template-columns: repeat(5, 1fr); gap: 4px;
+}
+#app.lobby .tabs { display: grid; }
+.tab {
+  border: 0; background: transparent; color: #b8b0d0; font-family: inherit;
+  font-size: 9px; letter-spacing: 0.3px; padding: 6px 2px; border-radius: 8px;
+  text-transform: uppercase;
+}
+.tab.on { background: #433c66; color: #fff; }
+.tab .ic { display: block; font-size: 16px; margin-bottom: 2px; }
+
+.tree { display: flex; flex-direction: column; gap: 10px; }
+.tree-row { display: flex; gap: 6px; justify-content: center; flex-wrap: nowrap; }
+.tnode {
+  width: 78px; background: #2e2a4a; border-radius: 12px; padding: 8px 5px;
+  text-align: center; border: 2px solid #3e3860; color: #fff; font-family: inherit;
+}
+.tnode.on { border-color: #f0c318; background: #3a3258; }
+.tnode.locked { opacity: 0.55; }
+.tnode h3 { font-size: 12px; font-weight: 400; }
+.tnode p { font-size: 9px; color: #c8c0e4; line-height: 1.3; margin: 4px 0; }
+.tnode .cost { font-size: 10px; color: #f0c318; }
+
+.settings-list { display: flex; flex-direction: column; gap: 10px; }
+.settings-list p { font-size: 13px; color: #d8d4ea; line-height: 1.4; }
+.danger {
+  height: 36px; border: 0; border-radius: 10px; background: #8a2840; color: #fff;
+  font-family: inherit; font-size: 13px;
+}
+.muted { font-size: 11px; color: #9a94b0; margin-top: 16px; }
+
+#boot {
+  position: absolute; inset: 0; z-index: 40; background: #14141a;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+#boot h1 { font-size: 32px; letter-spacing: 3px; font-weight: 400; }
+#boot p { font-size: 12px; color: #9a94b0; letter-spacing: 1px; }
+#app.ready #boot { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="boot"><h1>PUNCHMAN</h1><p>BY AUTOPROD</p></div>
+  <div id="stage"><canvas id="view"></canvas></div>
+  <div id="dmg-layer"></div>
+  <div class="toast" id="toast"></div>
+
+  <div class="fight-ui">
+    <button class="gear" id="btn-gear" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.1" fill="#eef0f4"/><path fill="#eef0f4" d="M19.4 13.1a7.7 7.7 0 0 0 .1-1.1 7.7 7.7 0 0 0-.1-1.1l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.9-1.1l-.4-2.6h-4l-.4 2.6a7.4 7.4 0 0 0-1.9 1.1l-2.4-1-2 3.4 2 1.6a7.7 7.7 0 0 0-.1 1.1 7.7 7.7 0 0 0 .1 1.1l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.9 1.1l.4 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.9-1.1l2.4 1 2-3.4-2-1.6Z"/></svg>
+    </button>
+    <div class="brand">PUNCHMAN</div>
+    <div class="gold"><span id="gold-amt">0</span><div class="coin"></div></div>
+    <div class="stage-hud">
+      <div class="unlock-tag" id="unlock-tag">UNLOCK<br>SPEED UP</div>
+      <div class="sbar"><div class="fill" id="stage-fill"></div></div>
+      <div class="marker" id="stage-mark"><svg viewBox="0 0 12 12"><rect x="3.2" y="5.2" width="5.6" height="4.6" rx="0.8" fill="#5a4a20"/><path d="M4.2 5.2V4.1a1.8 1.8 0 0 1 3.6 0v1.1" stroke="#5a4a20" stroke-width="1.15" fill="none"/></svg></div>
+      <div class="end-icon"><span>!</span></div>
+      <div class="stage-lbl" id="stage-lbl">Stage-1</div>
+      <div class="reward"><i></i><span id="stage-reward">40</span></div>
+    </div>
+    <div class="side-btns">
+      <button class="sbtn" id="btn-book" aria-label="Talents">
+        <svg viewBox="0 0 24 24"><path d="M5 4.2h11.2A2.8 2.8 0 0 1 19 7v13.2H8.2A3.2 3.2 0 0 0 5 23.2V4.2Z" fill="#efe6d4"/><path d="M5 4.2C5 4.2 6.6 3.4 8.4 3.4 10.2 3.4 11.6 4.2 11.6 4.2V20s-1.4-.8-3.2-.8-3.4.8-3.4.8V4.2Z" fill="#c47a3a"/><path d="M13 8.2h5.2M13 11.4h5.2" stroke="#6a3a18" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button class="sbtn speed" id="btn-speed">x1</button>
+      <button class="sbtn" id="btn-lobby" aria-label="Lobby">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="#efe6d4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <section class="panel" id="panel">
+    <button class="arrow" id="btn-expand" aria-label="Expand panel">▾</button>
+    <div class="stats" id="stats">
+      <button class="stat" data-up="dmg"><div class="k">DMG</div><div class="v" id="st-dmg">8</div><div class="c" id="c-dmg">15</div></button>
+      <button class="stat" data-up="range"><div class="k">Range</div><div class="v" id="st-range">4.0 ft</div><div class="c" id="c-range">15</div></button>
+      <button class="stat" data-up="rate"><div class="k">Rate</div><div class="v" id="st-rate">0.90s</div><div class="c" id="c-rate">18</div></button>
+      <button class="stat" data-up="crit"><div class="k">Crt Chn</div><div class="v" id="st-crit">5%</div><div class="c" id="c-crit">20</div></button>
+      <button class="stat" data-up="critDmg"><div class="k">Crt Dmg</div><div class="v" id="st-critDmg">150%</div><div class="c" id="c-critDmg">22</div></button>
+    </div>
+    <div class="passives">
+      <h4>PASSIVE ABILITIES</h4>
+      <div class="pas-row" id="pas-row"></div>
+    </div>
+    <div class="hp-row">
+      <svg class="heart" viewBox="0 0 20 18"><path d="M10 16.4C3.2 11.2 1.2 8.4 1.2 5.6 1.2 3.2 3 1.4 5.4 1.4c1.5 0 2.9.8 3.6 2 0.7-1.2 2.1-2 3.6-2 2.4 0 4.2 1.8 4.2 4.2 0 2.8-2 5.6-8.8 10.8Z" fill="#ff3b4a" stroke="#c81830" stroke-width="0.8"/></svg>
+      <div class="bar hp"><i id="hp-fill"></i><em id="hp-lbl">100 / 100</em></div>
+    </div>
+    <div class="xp-row">
+      <div class="lv" id="lv-lbl">Lv 1</div>
+      <div class="bar xp"><i id="xp-fill"></i><em id="xp-lbl">0 / 40</em></div>
+    </div>
+    <div class="mid">
+      <div class="skills" id="skills"></div>
+    </div>
+    <div class="goal-row">
+      <div class="goal-card">
+        <div class="goal">
+          <svg class="gicon" viewBox="0 0 16 16"><rect x="3" y="6" width="10" height="8" rx="1.4" fill="#f0d167"/><rect x="6" y="3" width="4" height="4" rx="0.6" fill="#f0d167"/></svg>
+          <div class="gbar a"><i id="g1-fill"></i></div>
+          <em id="g1-n">0/10</em>
+        </div>
+        <p id="g1-t">Defeat 10 enemies</p>
+      </div>
+      <div class="goal-card">
+        <div class="goal">
+          <svg class="gicon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="#f0c14a"/><circle cx="8" cy="8" r="2.4" fill="#fff3c0"/></svg>
+          <div class="gbar b"><i id="g2-fill"></i></div>
+          <em id="g2-n">0/3</em>
+        </div>
+        <p id="g2-t">Buy 3 upgrades</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="overlay" id="lobby">
+    <div class="ov-head"><h2 id="lobby-title">Lobby</h2><button class="back" id="btn-battle">Battle</button></div>
+    <div class="lobby-body" id="lobby-body"></div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab" data-tab="pet"><span class="ic">🐾</span>Pet</button>
+    <button class="tab" data-tab="heroes"><span class="ic">🥊</span>Heroes</button>
+    <button class="tab" data-tab="battle"><span class="ic">⚔️</span>Battle</button>
+    <button class="tab" data-tab="inventory"><span class="ic">🎒</span>Inventory</button>
+    <button class="tab" data-tab="ring"><span class="ic">⬡</span>The Ring</button>
+  </nav>
+
+  <div class="overlay" id="talents">
+    <div class="ov-head"><h2>Talents</h2><button class="back" id="btn-talents-back">Back</button></div>
+    <p class="muted" style="margin:-4px 0 12px">Spend gold on skills that stay with you. Some need an earlier talent.</p>
+    <div class="tree" id="talent-tree"></div>
+  </div>
+
+  <div class="overlay" id="settings">
+    <div class="ov-head"><h2>Settings</h2><button class="back" id="btn-settings-back">Back</button></div>
+    <div class="settings-list">
+      <p>Punchman v<span id="ver">1.0.0</span> by Autoprod.</p>
+      <p>Gold is the only currency. The fight never stops — upgrade, then get back in the ring.</p>
+      <button class="danger" id="btn-reset">Reset save</button>
+      <p class="muted">Reset clears local progress on this device only.</p>
+    </div>
+  </div>
+</div>
+<script src="vendor/three.min.js"></script>
+<script src="game.js"></script>
+<script>if(/[?&]test=1/.test(location.search)){var s=document.createElement("script");s.src="test.js";document.body.appendChild(s);}if(/[?&]shot=/.test(location.search)){var s2=document.createElement("script");s2.src="shot.js";document.body.appendChild(s2);}</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
