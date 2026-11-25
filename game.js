@@ -1,8 +1,8 @@
 
-/* Punchman v1.0.0 — Autoprod. Original three.js idle ring brawler. */
+/* Punchman v1.0.1 — Autoprod. Original three.js idle ring brawler. */
 (function () {
   'use strict';
-  const VERSION = '1.0.0';
+  const VERSION = '1.0.1';
   const SAVE_KEY = 'punchman-save-v1';
   const SPEEDS = [1, 2, 3, 5, 6, 8, 9, 10];
   const MAX_E = 40;

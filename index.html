@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--! Punchman by Autoprod. © 2026 Autoprod. All rights reserved. Not for resale or redistribution. -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -293,6 +294,8 @@ html, body {
 #boot h1 { font-size: 32px; letter-spacing: 3px; font-weight: 400; }
 #boot p { font-size: 12px; color: #9a94b0; letter-spacing: 1px; }
 #app.ready #boot { display: none; }
+
+#lobby #apCopyright{text-align:center;font-size:10px;line-height:1.4;opacity:.8;color:#c8c4d8;margin:10px 12px calc(62px + env(safe-area-inset-bottom));}
 </style>
 </head>
 <body>
@@ -374,6 +377,7 @@ html, body {
   <div class="overlay" id="lobby">
     <div class="ov-head"><h2 id="lobby-title">Lobby</h2><button class="back" id="btn-battle">Battle</button></div>
     <div class="lobby-body" id="lobby-body"></div>
+    <p class="ap-copy" id="apCopyright">© 2026 Autoprod. All rights reserved. Not for resale or redistribution.</p>
   </div>
   <nav class="tabs" id="tabs">
     <button class="tab" data-tab="pet"><span class="ic">🐾</span>Pet</button>
@@ -392,8 +396,9 @@ html, body {
   <div class="overlay" id="settings">
     <div class="ov-head"><h2>Settings</h2><button class="back" id="btn-settings-back">Back</button></div>
     <div class="settings-list">
-      <p>Punchman v<span id="ver">1.0.0</span> by Autoprod.</p>
+      <p>Punchman v<span id="ver">1.0.1</span> by Autoprod.</p>
       <p>Gold is the only currency. The fight never stops — upgrade, then get back in the ring.</p>
+      <p>© 2026 Autoprod. All rights reserved. Not for resale or redistribution.</p>
       <button class="danger" id="btn-reset">Reset save</button>
       <p class="muted">Reset clears local progress on this device only.</p>
     </div>
